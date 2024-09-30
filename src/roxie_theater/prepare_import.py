@@ -11,6 +11,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--file", type=str, required=True)
+    parser.add_argument("-o", "--output", type=str, help="output path")
     parser.add_argument("-v", "--verbose", action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
 
@@ -26,6 +27,8 @@ def main():
         print(f"Parsed file with {extracted_movie_count} extracted movies")
 
     output_file = args.file.replace(".json", ".boxd.csv")
+    if args.output:
+        output_file = args.output
     with open(output_file, "w") as csv_file:
         fieldnames = ["tmdbID", "Title", "Year", "Directors", "Review"]
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)

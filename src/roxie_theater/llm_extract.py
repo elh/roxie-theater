@@ -84,6 +84,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--file", type=str, required=True)
+    parser.add_argument("-o", "--output", type=str, help="output path")
     parser.add_argument("-v", "--verbose", action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
 
@@ -119,6 +120,8 @@ def main():
 
     # save results
     output_file = args.file.replace(".json", ".llm.json")
+    if args.output:
+        output_file = args.output
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     with open(output_file, "w") as f:
         # NOTE: not ascii
