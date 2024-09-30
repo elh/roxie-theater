@@ -186,6 +186,7 @@ ollama==0.3.3
     # via langchain-ollama
 openai==1.50.2
     # via langchain-openai
+    # via roxie-theater
 orjson==3.10.7
     # via langsmith
 packaging==24.1
