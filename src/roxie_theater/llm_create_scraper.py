@@ -1,6 +1,5 @@
 import os
 import sys
-import json
 from dotenv import load_dotenv
 from scrapegraphai.graphs import ScriptCreatorGraph
 from pydantic import BaseModel, Field
