@@ -2,6 +2,7 @@ import json
 import argparse
 from dotenv import load_dotenv
 import csv
+from datetime import datetime
 
 
 def main():
@@ -25,12 +26,18 @@ def main():
 
     output_file = args.file.replace(".json", ".boxd.csv")
     with open(output_file, "w") as csv_file:
-        fieldnames = ["tmdbID", "Title", "Year", "Directors"]
+        fieldnames = ["tmdbID", "Title", "Year", "Directors", "Review"]
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
 
         for k, v in cal.items():
             for m in v["llm"]["extracted_movies"]:
+                # Parse the first showtime and format it
+                first_showtime = datetime.fromisoformat(v["showtimes"][0])
+                formatted_showtime = first_showtime.strftime("First show %B %d %I:%M%p")
+
+                review = f"{v['title']}\n{v['link']}\n\n{formatted_showtime}"
+
                 if "tmdb" in m and m["tmdb"]:
                     writer.writerow(
                         {
@@ -38,6 +45,7 @@ def main():
                             "Title": m["tmdb"]["title"],
                             "Year": m["tmdb"]["release_date"][:4],
                             "Directors": m["directors"],
+                            "Review": review,
                         }
                     )
                 else:
@@ -47,6 +55,7 @@ def main():
                             "Title": m["title"],
                             "Year": m["year"],
                             "Directors": m["directors"],
+                            "Review": review,
                         }
                     )
 
