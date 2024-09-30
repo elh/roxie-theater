@@ -9,6 +9,7 @@ import time
 import random
 
 la_timezone = pytz.timezone("America/Los_Angeles")
+calendar_url = "https://roxie.com/calendar/"
 
 
 def parse_showtime(year: str, month: str, day: str, showtime: str) -> datetime:
@@ -24,8 +25,7 @@ def datetime_serializer(obj):
 
 
 def scrape_calendar() -> dict:
-    url = "https://roxie.com/calendar/"
-    response = requests.get(url)
+    response = requests.get(calendar_url)
     soup = BeautifulSoup(response.content, "html.parser")
 
     month_year_str = soup.select_one(".calendar-block__month-title").text.strip()
@@ -116,7 +116,7 @@ def main():
         time.sleep(random.uniform(0.25, 1))
 
     # save results
-    output_file = "output/roxie_calendar.json"
+    output_file = f"output/data.{int(time.time())}.json"
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     with open(output_file, "w") as f:
         # NOTE: not ascii

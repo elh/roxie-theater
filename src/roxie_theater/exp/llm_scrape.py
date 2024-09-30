@@ -34,7 +34,7 @@ def main():
     graph_config = {
         "llm": {
             "api_key": openai_api_key,
-            "model": "openai/gpt-4o-mini",
+            "model": "openai/gpt-4o",
         },
         "verbose": True,
         "headless": False,
