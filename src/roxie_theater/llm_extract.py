@@ -113,6 +113,12 @@ def main():
         # sleep w/ jitter
         time.sleep(random.uniform(0.25, 1))
 
+    if args.verbose:
+        extracted_movie_count = sum(
+            len(m["llm"]["extracted_movies"]) for m in cal.values()
+        )
+        print(f"Extracted {extracted_movie_count} movies from {len(cal)} listings")
+
     # save results
     output_file = args.file.replace(".json", ".llm.json")
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
