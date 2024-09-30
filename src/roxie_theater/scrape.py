@@ -5,6 +5,8 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 import pytz
+import time
+import random
 
 la_timezone = pytz.timezone("America/Los_Angeles")
 
@@ -80,9 +82,15 @@ def parse_movie(url: str) -> dict:
     if directors_node:
         directors = directors_node.next_sibling.strip()
 
+    content = None
+    content_node = soup.find("div", class_="content-film__content content")
+    if content_node:
+        content = content_node.decode_contents()
+
     return {
         "year": year,
         "directors": directors,
+        "content": content,
     }
 
 
@@ -92,20 +100,20 @@ def main():
     args = parser.parse_args()
 
     if args.verbose:
-        print("Scraping calendar...")
+        print("Scraping calendar ...")
     cal = scrape_calendar()
-    if args.verbose:
-        print(json.dumps(cal, indent=2))
 
-    for k, v in cal.items():
+    print(f"Scraped calendar with {len(cal)} distinct movies")
+
+    for index, k in enumerate(cal):
+        v = cal[k]
         if args.verbose:
-            print(f"Scraping movie: {v['title']}...")
+            print(f"Scraping movie: {v['title']} ({index + 1} of {len(cal)}) ...")
         movie = parse_movie(v["link"])
         cal[k].update(movie)
-        if args.verbose:
-            print(json.dumps(movie, indent=2))
 
-        break
+        # sleep w/ jitter
+        time.sleep(random.uniform(0.25, 1))
 
     # save results
     output_file = "output/roxie_calendar.json"
