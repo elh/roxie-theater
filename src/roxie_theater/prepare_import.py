@@ -3,6 +3,7 @@ import argparse
 from dotenv import load_dotenv
 import csv
 from datetime import datetime
+from pytz import timezone
 
 
 def main():
@@ -30,12 +31,16 @@ def main():
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
 
-        for k, v in cal.items():
+        for v in cal.values():
             for m in v["llm"]["extracted_movies"]:
-                # Parse the first showtime and format it
                 first_showtime = datetime.fromisoformat(v["showtimes"][0])
-                formatted_showtime = first_showtime.strftime("First show %B %d %I:%M%p")
+                last_showtime = datetime.fromisoformat(v["showtimes"][-1])
 
+                # only export movies with showtimes in the future
+                if last_showtime < datetime.now(timezone("America/Los_Angeles")):
+                    continue
+
+                formatted_showtime = first_showtime.strftime("First show %B %d %I:%M%p")
                 review = f"{v['title']}\n{v['link']}\n\n{formatted_showtime}"
 
                 if "tmdb" in m and m["tmdb"]:
