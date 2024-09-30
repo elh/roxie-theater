@@ -14,8 +14,7 @@ MODEL = "gpt-4o-mini"
 SYS_PROMPT = """\
 Given this theater movie listing, read the page and extract the movies being shown.
 For each movie, extract the title, directors, and release year.
-Also make a guess if the listing is for short film(s).
-Return the final result as a JSON object with a `movies` array (`title`, `directors`, `year` keys) and `is_short_film` boolean.
+Return the final result as a JSON object with a `movies` array (`title`, `directors`, `year`, `is_short_film` keys).
 
 Some possible cases to consider:
 * The listing is for a single movie. This is the common case. Return a list with a single movie.
@@ -32,9 +31,9 @@ class ExtractedMovies(BaseModel):
         title: str = Field(description="Movie title")
         directors: str = Field(description="Movie directors")
         year: int = Field(description="Release year")
+        is_short_film: bool = Field(description="Is short film")
 
     movies: list[Movie]
-    is_short_films: bool = Field(description="Is short film(s)")
 
 
 CHAT_DEFAULTS = defaults = {
@@ -77,7 +76,6 @@ def process_movie(client: OpenAI, movie: dict) -> list:
 
     return {
         "extracted_movies": [m.dict() for m in out.movies],
-        "is_short_films": out.is_short_films,
     }
 
 
@@ -111,7 +109,7 @@ def main():
         cal[k]["llm"] = processed
 
         # sleep w/ jitter
-        time.sleep(random.uniform(0.25, 1))
+        time.sleep(random.uniform(0.05, 0.1))
 
     if args.verbose:
         extracted_movie_count = sum(
