@@ -6,7 +6,6 @@ authors = [
     { name = "elh", email = "elh.is.online@gmail.com" }
 ]
 dependencies = [
-    "scrapegraphai>=1.25.1",
     "python-dotenv>=1.0.1",
     "pydantic>=2.9.2",
     "bs4>=0.0.2",
