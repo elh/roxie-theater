@@ -27,6 +27,7 @@ attrs==24.2.0
     # via jsonschema
     # via referencing
 beautifulsoup4==4.12.3
+    # via bs4
     # via google
     # via scrapegraphai
 boto3==1.35.29
@@ -34,6 +35,8 @@ boto3==1.35.29
 botocore==1.35.29
     # via boto3
     # via s3transfer
+bs4==0.0.2
+    # via roxie-theater
 cachetools==5.5.0
     # via google-auth
 certifi==2024.8.30
