@@ -4,23 +4,17 @@ from dotenv import load_dotenv
 from scrapegraphai.graphs import ScriptCreatorGraph
 from pydantic import BaseModel, Field
 
-URL = "https://roxie.com/calendar/"
+URL = "https://roxie.com/film/staff-pick-institute-benjamenta-35mm/"
 
 PROMPT = """\
-Review the following movie showtimes and extract a list of all the movies and their showtimes.
+Review the following movie webpage for a theater and extract the name of the movie, year, and director(s).
 """
 
 
 class Movie(BaseModel):
     name: str = Field(description="Name of the movie")
-    link: str = Field(description="Link to the movie from the website")
-    showtimes: list[str] = Field(
-        description="List of showtimes formatted like 'September 1 12:30 PM' or 'September 15 7:15 PM'"
-    )
-
-
-class Movies(BaseModel):
-    movies: list[Movie] = Field(description="Name of the movie")
+    year: int = Field(description="Year the movie was released")
+    directors: list[str] = Field(description="List of directors of the movie")
 
 
 def main():
@@ -44,7 +38,7 @@ def main():
         prompt=PROMPT,
         source=URL,
         config=graph_config,
-        schema=Movies,
+        schema=Movie,
     )
 
     result = graph.run()

@@ -44,7 +44,7 @@ def scrape_calendar() -> dict:
 
         for film in day_div.select(".film"):
             link = film.select_one("a")["href"]
-            calendar_title = film.select_one(".film-title").text.strip()
+            title = film.select_one(".film-title").text.strip()
             showtime = film.select_one(".film-showtime").text.strip()
 
             showtime_datetime = parse_showtime(year, month, day, showtime)
@@ -54,12 +54,36 @@ def scrape_calendar() -> dict:
                 continue
 
             calendar[link] = {
-                "calendar_title": calendar_title,
+                "title": title,
                 "link": link,
                 "showtimes": [showtime_datetime],
             }
 
     return calendar
+
+
+def parse_movie(url: str) -> dict:
+    response = requests.get(url)
+    soup = BeautifulSoup(response.content, "html.parser")
+
+    year = None
+    year_node = soup.find(
+        "h5", class_="content-film__film-details-title", string="Year"
+    )
+    if year_node:
+        year = int(year_node.next_sibling.strip())
+
+    directors = None
+    directors_node = soup.find(
+        "h5", class_="content-film__film-details-title", string="Director"
+    )
+    if directors_node:
+        directors = directors_node.next_sibling.strip()
+
+    return {
+        "year": year,
+        "directors": directors,
+    }
 
 
 def main():
@@ -72,6 +96,16 @@ def main():
     cal = scrape_calendar()
     if args.verbose:
         print(json.dumps(cal, indent=2))
+
+    for k, v in cal.items():
+        if args.verbose:
+            print(f"Scraping movie: {v['title']}...")
+        movie = parse_movie(v["link"])
+        cal[k].update(movie)
+        if args.verbose:
+            print(json.dumps(movie, indent=2))
+
+        break
 
     # save results
     output_file = "output/roxie_calendar.json"
