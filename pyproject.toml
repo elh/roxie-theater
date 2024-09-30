@@ -5,7 +5,9 @@ description = "Add your description here"
 authors = [
     { name = "elh", email = "elh.is.online@gmail.com" }
 ]
-dependencies = []
+dependencies = [
+    "scrapegraphai>=1.25.1",
+]
 readme = "README.md"
 requires-python = ">= 3.8"
 
