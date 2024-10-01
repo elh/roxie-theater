@@ -29,10 +29,15 @@ class JSONLogger:
 def log_func(kwarg_keys: Optional[list[str]] = None):
     def wrapper(func):
         @wraps(func)
-        def decorator(*args, logger: Logger = JSONLogger(), **kwargs):
+        def decorator(*args, **kwargs):
             now = datetime.now(timezone.utc)
             start_time = now.timestamp()
             now_rfc3339 = now.isoformat()
+
+            if "logger" in kwargs:
+                logger = kwargs["logger"]
+            else:
+                logger = JSONLogger()
 
             if kwarg_keys is not None:
                 logged_kwargs = {k: v for k, v in kwargs.items() if k in kwarg_keys}
