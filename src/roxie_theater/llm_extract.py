@@ -12,6 +12,7 @@ import random
 from dotenv import load_dotenv
 from openai import OpenAI
 from pydantic import BaseModel, Field
+from roxie_theater.log import JSONLogger, log_func
 
 MODEL = "gpt-4o-mini"
 
@@ -52,6 +53,7 @@ def datetime_serializer(obj):
     raise TypeError("Type not serializable")
 
 
+@log_func()
 def process_movie(client: OpenAI, movie: dict) -> list:
     input = {
         "page_title": movie["title"],
@@ -92,35 +94,41 @@ def main():
     parser.add_argument("-v", "--verbose", action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
 
+    start_time = time.time()
+
+    logger = JSONLogger(run_id=int(time.time()), script="llm_extract")
+
     openai_api_key = os.environ.get("OPENAI_API_KEY")
     if not openai_api_key:
-        print("OPENAI_API_KEY env var required")
+        logger(message="Error", error="OPENAI_API_KEY env var required")
         sys.exit(1)
 
     client = OpenAI(api_key=openai_api_key)
 
-    if args.verbose:
-        print("Parsing file ...")
     with open(args.file, "r") as f:
         cal = json.load(f)
 
     for index, k in enumerate(cal):
         v = cal[k]
-        if args.verbose:
-            print(f"Processing movie: {v['title']} ({index + 1} of {len(cal)}) ...")
-        processed = process_movie(client, v)
-        if args.verbose:
-            print(f"Processed movie: {len(processed['extracted_movies'])} extracted")
+
+        movie_logger = logger.with_kwargs(listing=v["title"], index=index)
+        processed = process_movie(client, movie=v, logger=movie_logger)
+        movie_logger.log(
+            message="Processed movie",
+            extracted_count=len(processed["extracted_movies"]),
+        )
         cal[k]["llm"] = processed
 
         # sleep w/ jitter
         time.sleep(random.uniform(0.05, 0.1))
 
-    if args.verbose:
-        extracted_movie_count = sum(
+    logger.log(
+        message="Processed all movies",
+        listing_count=len(cal),
+        extracted_movie_count=sum(
             len(m["llm"]["extracted_movies"]) for m in cal.values()
-        )
-        print(f"Extracted {extracted_movie_count} movies from {len(cal)} listings")
+        ),
+    )
 
     # save results
     output_file = args.file.replace(".json", ".llm.json")
@@ -131,6 +139,11 @@ def main():
     with open(output_file, "w") as f:
         # NOTE: not ascii
         json.dump(cal, f, indent=2, ensure_ascii=False, default=datetime_serializer)
+    logger.log(
+        message="Wrote output file",
+        output_file=output_file,
+        duration=time.time() - start_time,
+    )
 
 
 if __name__ == "__main__":

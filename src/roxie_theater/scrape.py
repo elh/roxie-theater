@@ -11,6 +11,7 @@ from datetime import datetime
 import pytz
 import time
 import random
+from roxie_theater.log import JSONLogger, log_func
 
 la_timezone = pytz.timezone("America/Los_Angeles")
 calendar_url = "https://roxie.com/calendar/"
@@ -28,6 +29,7 @@ def datetime_serializer(obj):
     raise TypeError("Type not serializable")
 
 
+@log_func()
 def scrape_calendar() -> dict:
     response = requests.get(calendar_url)
     soup = BeautifulSoup(response.content, "html.parser")
@@ -68,6 +70,7 @@ def scrape_calendar() -> dict:
     return calendar
 
 
+@log_func(kwarg_keys=["url"])
 def scrape_movie_page(url: str) -> dict:
     response = requests.get(url)
     soup = BeautifulSoup(response.content, "html.parser")
@@ -104,17 +107,17 @@ def main():
     parser.add_argument("-v", "--verbose", action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
 
-    if args.verbose:
-        print("Scraping calendar ...")
-    cal = scrape_calendar()
+    start_time = time.time()
 
-    print(f"Scraped calendar with {len(cal)} distinct pages.")
+    logger = JSONLogger(run_id=int(time.time()), script="llm_extract")
+
+    cal = scrape_calendar()
+    logger.log(message="Scraped calendar", listing_count=len(cal))
 
     for index, k in enumerate(cal):
         v = cal[k]
-        if args.verbose:
-            print(f"Scraping movie: {v['title']} ({index + 1} of {len(cal)}) ...")
-        movie = scrape_movie_page(v["link"])
+        movie_logger = logger.with_kwargs(listing=v["title"], index=index)
+        movie = scrape_movie_page(url=v["link"], logger=movie_logger)
         cal[k].update(movie)
 
         # sleep w/ jitter
@@ -129,6 +132,11 @@ def main():
     with open(output_file, "w") as f:
         # NOTE: not ascii
         json.dump(cal, f, indent=2, ensure_ascii=False, default=datetime_serializer)
+    logger.log(
+        message="Wrote output file",
+        output_file=output_file,
+        duration=time.time() - start_time,
+    )
 
 
 if __name__ == "__main__":

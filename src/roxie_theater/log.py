@@ -34,13 +34,16 @@ def log_func(kwarg_keys: Optional[list[str]] = None):
             start_time = now.timestamp()
             now_rfc3339 = now.isoformat()
 
-            logged_kwargs = {k: v for k, v in kwargs.items() if k in kwarg_keys}
+            if kwarg_keys is not None:
+                logged_kwargs = {k: v for k, v in kwargs.items() if k in kwarg_keys}
+            else:
+                logged_kwargs = {}
             try:
                 result = func(*args, **kwargs)
-                duration = time.time() - start_time
+                duration = datetime.now(timezone.utc).timestamp() - start_time
 
                 rec = {
-                    "name": "function call",
+                    "message": "function call",
                     "function": func.__name__,
                     "timestamp": now_rfc3339,
                     "duration": duration,
@@ -50,10 +53,10 @@ def log_func(kwarg_keys: Optional[list[str]] = None):
                 return result
 
             except Exception as e:
-                duration = time.time() - start_time
+                duration = datetime.now(timezone.utc).timestamp() - start_time
 
                 rec = {
-                    "name": "function call",
+                    "message": "function call",
                     "function": func.__name__,
                     "timestamp": now_rfc3339,
                     "duration": duration,

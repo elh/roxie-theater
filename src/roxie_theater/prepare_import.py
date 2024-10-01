@@ -9,6 +9,8 @@ import csv
 from datetime import datetime
 from pytz import timezone
 import os
+from roxie_theater.log import JSONLogger
+import time
 
 
 def main():
@@ -20,16 +22,17 @@ def main():
     parser.add_argument("-v", "--verbose", action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
 
-    if args.verbose:
-        print("Parsing file ...")
+    start_time = time.time()
+
+    logger = JSONLogger(run_id=int(time.time()), script="prepare_import")
+
+    logger.log(message="Parsing file", file=args.file)
     with open(args.file, "r") as f:
         cal = json.load(f)
-    if args.verbose:
-        print(f"Parsed file with {len(cal)} listings")
-        extracted_movie_count = sum(
-            len(m["llm"]["extracted_movies"]) for m in cal.values()
-        )
-        print(f"Parsed file with {extracted_movie_count} extracted movies")
+    extracted_movie_count = sum(len(m["llm"]["extracted_movies"]) for m in cal.values())
+    logger.log(
+        message="Parsed file", listing_count=len(cal), movie_count=extracted_movie_count
+    )
 
     output_file = args.file.replace(".json", ".boxd.csv")
     if args.output:
@@ -73,6 +76,11 @@ def main():
                             "Review": review,
                         }
                     )
+    logger.log(
+        message="Wrote output file",
+        output_file=output_file,
+        duration=time.time() - start_time,
+    )
 
 
 if __name__ == "__main__":

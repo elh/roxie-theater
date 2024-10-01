@@ -12,6 +12,7 @@ import random
 import copy
 from dotenv import load_dotenv
 import requests
+from roxie_theater.log import Logger, JSONLogger, log_func
 
 
 def datetime_serializer(obj):
@@ -20,8 +21,11 @@ def datetime_serializer(obj):
     raise TypeError("Type not serializable")
 
 
+@log_func()
 def identify_movies(
-    tmdb_token: str, extracted_movies: list[dict], verbose: bool = False
+    tmdb_token: str,
+    extracted_movies: list[dict],
+    logger: Logger = JSONLogger(),
 ) -> list[dict]:
     base_url = "https://api.themoviedb.org/"
     endpoint = "/3/search/movie"
@@ -41,27 +45,32 @@ def identify_movies(
             response = requests.get(url, headers=headers, params=params)
 
             if response.status_code == 429:
-                print("Error: Rate limited")
-                print("Sleeping for 10 seconds")
+                logger.log(message="Rate limited")
                 time.sleep(10)
                 retry_count += 1
                 continue
             if response.status_code != 200:
-                print(f"Error: {response.status_code}")
+                logger.log(
+                    message="Error",
+                    error="failed TMDB search",
+                    status_code=response.status_code,
+                )
                 break
 
             data = response.json()
-            if verbose:
-                print(
-                    f"\t\t\tFound {len(data['results'])} result(s) for {m['title']} - {m['year']}"
-                )
+            logger.log(
+                message="TMDB search",
+                title=m["title"],
+                year=m["year"],
+                result_count=len(data["results"]),
+            )
             if len(data["results"]) > 0:
                 m["tmdb"] = data["results"][0]
             else:
                 m["tmdb"] = None
             break
         else:
-            print(f"Failed to get data for {m['title']} after 3 retries")
+            logger.log(message="Error", error="failed TMDB search. Retries exhausted")
             m["tmdb"] = None
 
     return out
@@ -76,35 +85,39 @@ def main():
     parser.add_argument("-v", "--verbose", action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
 
+    start_time = time.time()
+
+    logger = JSONLogger(run_id=int(time.time()), script="id_movies")
+
     tmdb_token = os.environ.get("TMDB_TOKEN")
     if not tmdb_token:
-        print("TMDB_TOKEN env var required")
+        logger(message="Error", error="TMDB_TOKEN env var required")
         sys.exit(1)
 
-    if args.verbose:
-        print("Parsing file ...")
+    logger.log(message="Parsing file", file=args.file)
     with open(args.file, "r") as f:
         cal = json.load(f)
-    if args.verbose:
-        print(f"Parsed file with {len(cal)} listings")
-        extracted_movie_count = sum(
-            len(m["llm"]["extracted_movies"]) for m in cal.values()
-        )
-        print(f"Parsed file with {extracted_movie_count} extracted movies")
+    extracted_movie_count = sum(len(m["llm"]["extracted_movies"]) for m in cal.values())
+    logger.log(
+        message="Parsed file", listing_count=len(cal), movie_count=extracted_movie_count
+    )
 
     for index, k in enumerate(cal):
         v = cal[k]
-        if args.verbose:
-            print(
-                f"Identifying movies:\t{v['title']} ({len(v['llm']['extracted_movies'])} movies) ({index + 1} of {len(cal)}) ..."
-            )
+
+        movie_logger = logger.with_kwargs(listing=v["title"], index=index)
         out = identify_movies(
-            tmdb_token, v["llm"]["extracted_movies"], verbose=args.verbose
+            tmdb_token,
+            v["llm"]["extracted_movies"],
+            logger=movie_logger,
         )
-        if args.verbose:
-            print(
-                f"\t\t\tIdentified {sum([1 if ('tmdb'in m and m['tmdb']) else 0 for m in out])} of {len(out)} movies"
-            )
+        movie_logger.log(
+            message="Identified movies",
+            identified_count=sum(
+                [1 if ("tmdb" in m and m["tmdb"]) else 0 for m in out]
+            ),
+            count=len(out),
+        )
         cal[k]["llm"]["extracted_movies"] = out
 
         # sleep w/ jitter
@@ -119,6 +132,11 @@ def main():
     with open(output_file, "w") as f:
         # NOTE: not ascii
         json.dump(cal, f, indent=2, ensure_ascii=False, default=datetime_serializer)
+    logger.log(
+        message="Wrote output file",
+        output_file=output_file,
+        duration=time.time() - start_time,
+    )
 
 
 if __name__ == "__main__":
