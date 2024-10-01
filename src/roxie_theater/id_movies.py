@@ -110,7 +110,8 @@ def main():
     output_file = args.file.replace(".json", ".tmdb.json")
     if args.output:
         output_file = args.output
-    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    if os.path.dirname(output_file):
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
     with open(output_file, "w") as f:
         # NOTE: not ascii
         json.dump(cal, f, indent=2, ensure_ascii=False, default=datetime_serializer)

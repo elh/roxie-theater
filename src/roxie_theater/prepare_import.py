@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import csv
 from datetime import datetime
 from pytz import timezone
+import os
 
 
 def main():
@@ -29,6 +30,8 @@ def main():
     output_file = args.file.replace(".json", ".boxd.csv")
     if args.output:
         output_file = args.output
+    if os.path.dirname(output_file):
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
     with open(output_file, "w") as csv_file:
         fieldnames = ["tmdbID", "Title", "Year", "Directors", "Review"]
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)

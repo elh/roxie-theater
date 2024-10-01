@@ -18,13 +18,18 @@ jobs:
     - run: python src/roxie_theater/llm_extract.py -f step_1.json -o step_2.json -v
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-    - run: python src/roxie_theater/id_movies.py -f step_2.json -o step_3.json -v
+    - run: python src/roxie_theater/id_movies.py -f step_2.json -o out.json -v
       env:
         TMDB_TOKEN: ${{ secrets.TMDB_TOKEN }}
-    - run: python src/roxie_theater/prepare_import.py -f step_3.json -o out.csv -v
+    - run: python src/roxie_theater/prepare_import.py -f out.json -o out.csv -v
     - run: echo "DATE=$(date +'%Y_%m_%d')" >> $GITHUB_ENV
+    - uses: actions/upload-artifact@v4
+      with:
+        name: "${{ env.DATE }}.json"
+        path: out.json
+        retention-days: 7
     - uses: actions/upload-artifact@v4
       with:
         name: "${{ env.DATE }}.csv"
         path: out.csv
-        retention-days: 5
+        retention-days: 7
