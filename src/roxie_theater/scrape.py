@@ -68,7 +68,7 @@ def scrape_calendar() -> dict:
     return calendar
 
 
-def parse_movie(url: str) -> dict:
+def scrape_movie_page(url: str) -> dict:
     response = requests.get(url)
     soup = BeautifulSoup(response.content, "html.parser")
 
@@ -108,13 +108,13 @@ def main():
         print("Scraping calendar ...")
     cal = scrape_calendar()
 
-    print(f"Scraped calendar with {len(cal)} distinct movies")
+    print(f"Scraped calendar with {len(cal)} distinct pages.")
 
     for index, k in enumerate(cal):
         v = cal[k]
         if args.verbose:
             print(f"Scraping movie: {v['title']} ({index + 1} of {len(cal)}) ...")
-        movie = parse_movie(v["link"])
+        movie = scrape_movie_page(v["link"])
         cal[k].update(movie)
 
         # sleep w/ jitter
