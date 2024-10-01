@@ -1,0 +1,30 @@
+name: scrape
+
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: eifinger/setup-rye@v4
+      with:
+        enable-cache: true
+    - run: rye sync
+    - run: python src/roxie_theater/scrape.py -o step_1.json -v
+    - run: python src/roxie_theater/llm_extract.py -f step_1.json -o step_2.json -v
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    - run: python src/roxie_theater/id_movies.py -f step_2.json -o step_3.json -v
+      env:
+        TMDB_TOKEN: ${{ secrets.TMDB_TOKEN }}
+    - run: python src/roxie_theater/prepare_import.py -f step_3.json -o out.csv -v
+    - run: echo "DATE=$(date +'%Y_%m_%d')" >> $GITHUB_ENV
+    - uses: actions/upload-artifact@v4
+      with:
+        name: "${{ env.DATE }}.csv"
+        path: out.csv
+        retention-days: 5
