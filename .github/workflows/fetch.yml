@@ -1,4 +1,4 @@
-name: scrape
+name: fetch
 
 on:
   schedule:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  scrape:
+  fetch:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2

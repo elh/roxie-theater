@@ -1,3 +1,7 @@
+"""
+Use GPT to extract movie information from the listing webpages.
+"""
+
 import os
 import sys
 import json

@@ -1,3 +1,7 @@
+"""
+Find canonical TMDB ids for extracted movies.
+"""
+
 import os
 import sys
 import json

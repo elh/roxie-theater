@@ -1,3 +1,7 @@
+"""
+Prepare processed JSON file into an import CSV for Letterboxd.
+"""
+
 import json
 import argparse
 from dotenv import load_dotenv

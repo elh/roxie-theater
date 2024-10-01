@@ -1,3 +1,7 @@
+"""
+Fetch Roxie Theater showtimes from listing webpages using BeautifulSoup and requests.
+"""
+
 import os
 import json
 import argparse
