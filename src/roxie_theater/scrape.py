@@ -126,7 +126,7 @@ def main():
 
     logger = JSONLogger(**log_context)
 
-    cal = scrape_calendar()
+    cal = scrape_calendar(logger=logger)
     logger.log(message="Scraped calendar", listing_count=len(cal))
 
     for index, k in enumerate(cal):
