@@ -14,14 +14,17 @@ jobs:
       with:
         enable-cache: true
     - run: rye sync
-    - run: python src/roxie_theater/scrape.py -o step_1.json -l "{\"run_id\": \"${{ github.run_id }}-${{ github.run_number }}\"}"
-    - run: python src/roxie_theater/llm_extract.py -f step_1.json -o step_2.json -l "{\"run_id\": \"${{ github.run_id }}-${{ github.run_number }}\"}"
+    - run: |
+        LOG_CONTEXT=$(echo "{\"run_id\": \"${{ github.run_id }}-${{ github.run_number }}\"}")
+        echo "LOG_CONTEXT=$LOG_CONTEXT" >> $GITHUB_ENV
+    - run: python src/roxie_theater/scrape.py -o step_1.json -l "$LOG_CONTEXT"
+    - run: python src/roxie_theater/llm_extract.py -f step_1.json -o step_2.json -l "$LOG_CONTEXT"
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-    - run: python src/roxie_theater/id_movies.py -f step_2.json -o out.json -l "{\"run_id\": \"${{ github.run_id }}-${{ github.run_number }}\"}"
+    - run: python src/roxie_theater/id_movies.py -f step_2.json -o out.json -l "$LOG_CONTEXT"
       env:
         TMDB_TOKEN: ${{ secrets.TMDB_TOKEN }}
-    - run: python src/roxie_theater/prepare_import.py -f out.json -o out.csv -l "{\"run_id\": \"${{ github.run_id }}-${{ github.run_number }}\"}"
+    - run: python src/roxie_theater/prepare_import.py -f out.json -o out.csv -l "$LOG_CONTEXT"
     - run: echo "DATE=$(date +'%Y_%m_%d')" >> $GITHUB_ENV
     - uses: actions/upload-artifact@v4
       with:
