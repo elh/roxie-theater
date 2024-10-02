@@ -86,7 +86,7 @@ def main():
         "-l",
         "--log-context",
         type=str,
-        help="metadata to include in all logs. as JSON dict",
+        help="metadata to include in all logs. as JSON object",
     )
     args = parser.parse_args()
 

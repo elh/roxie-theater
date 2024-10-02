@@ -2,7 +2,7 @@ name: fetch
 
 on:
   schedule:
-    - cron: '0 8 * * *'
+    - cron: '0 17 */3 * *'
   workflow_dispatch:
 
 jobs:
@@ -14,14 +14,14 @@ jobs:
       with:
         enable-cache: true
     - run: rye sync
-    - run: python src/roxie_theater/scrape.py -o step_1.json
-    - run: python src/roxie_theater/llm_extract.py -f step_1.json -o step_2.json
+    - run: python src/roxie_theater/scrape.py -o step_1.json -l "{\"run_id\": \"${{ github.run_id }}-${{ github.run_number }}\"}"
+    - run: python src/roxie_theater/llm_extract.py -f step_1.json -o step_2.json -l "{\"run_id\": \"${{ github.run_id }}-${{ github.run_number }}\"}"
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-    - run: python src/roxie_theater/id_movies.py -f step_2.json -o out.json
+    - run: python src/roxie_theater/id_movies.py -f step_2.json -o out.json -l "{\"run_id\": \"${{ github.run_id }}-${{ github.run_number }}\"}"
       env:
         TMDB_TOKEN: ${{ secrets.TMDB_TOKEN }}
-    - run: python src/roxie_theater/prepare_import.py -f out.json -o out.csv
+    - run: python src/roxie_theater/prepare_import.py -f out.json -o out.csv -l "{\"run_id\": \"${{ github.run_id }}-${{ github.run_number }}\"}"
     - run: echo "DATE=$(date +'%Y_%m_%d')" >> $GITHUB_ENV
     - uses: actions/upload-artifact@v4
       with:
