@@ -6,6 +6,7 @@ from typing import Optional
 from typing import Protocol
 from datetime import datetime, timezone
 import copy
+import inspect
 
 
 class Logger(Protocol):
@@ -27,6 +28,10 @@ class JSONLogger:
 
 
 def log_func(kwarg_keys: Optional[list[str]] = None):
+    """
+    NOTE: this has gotten very magical (and inefficient) but fun
+    """
+
     def wrapper(func):
         @wraps(func)
         def decorator(*args, **kwargs):
@@ -43,6 +48,14 @@ def log_func(kwarg_keys: Optional[list[str]] = None):
                 logged_kwargs = {k: v for k, v in kwargs.items() if k in kwarg_keys}
             else:
                 logged_kwargs = {}
+
+            signature = inspect.signature(func)
+            kwargs = {
+                k: v
+                for k, v in kwargs.items()
+                if k != "logger" or k in signature.parameters
+            }
+
             try:
                 result = func(*args, **kwargs)
                 duration = datetime.now(timezone.utc).timestamp() - start_time
