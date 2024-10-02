@@ -3,6 +3,7 @@ Fetch Roxie Theater showtimes from listing webpages using BeautifulSoup and requ
 """
 
 import os
+import sys
 import json
 import argparse
 import requests
@@ -104,12 +105,26 @@ def scrape_movie_page(url: str) -> dict:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-o", "--output", type=str, help="output path")
-    parser.add_argument("-v", "--verbose", action=argparse.BooleanOptionalAction)
+    parser.add_argument(
+        "-l",
+        "--log-context",
+        type=str,
+        help="metadata to include in all logs. as JSON dict",
+    )
     args = parser.parse_args()
 
     start_time = time.time()
 
-    logger = JSONLogger(run_id=int(time.time()), script="llm_extract")
+    log_context = {}
+    if args.log_context:
+        try:
+            log_context = json.loads(args.log_context)
+        except json.JSONDecodeError:
+            print("Invalid JSON for --log-context")
+            sys.exit(1)
+    log_context["script"] = "scrape"
+
+    logger = JSONLogger(**log_context)
 
     cal = scrape_calendar()
     logger.log(message="Scraped calendar", listing_count=len(cal))

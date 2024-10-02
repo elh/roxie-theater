@@ -9,6 +9,7 @@ import csv
 from datetime import datetime
 from pytz import timezone
 import os
+import sys
 from roxie_theater.log import JSONLogger
 import time
 
@@ -19,12 +20,26 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--file", type=str, required=True)
     parser.add_argument("-o", "--output", type=str, help="output path")
-    parser.add_argument("-v", "--verbose", action=argparse.BooleanOptionalAction)
+    parser.add_argument(
+        "-l",
+        "--log-context",
+        type=str,
+        help="metadata to include in all logs. as JSON dict",
+    )
     args = parser.parse_args()
 
     start_time = time.time()
 
-    logger = JSONLogger(run_id=int(time.time()), script="prepare_import")
+    log_context = {}
+    if args.log_context:
+        try:
+            log_context = json.loads(args.log_context)
+        except json.JSONDecodeError:
+            print("Invalid JSON for --log-context")
+            sys.exit(1)
+    log_context["script"] = "prepare_import"
+
+    logger = JSONLogger(**log_context)
 
     logger.log(message="Parsing file", file=args.file)
     with open(args.file, "r") as f:

@@ -91,12 +91,26 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--file", type=str, required=True)
     parser.add_argument("-o", "--output", type=str, help="output path")
-    parser.add_argument("-v", "--verbose", action=argparse.BooleanOptionalAction)
+    parser.add_argument(
+        "-l",
+        "--log-context",
+        type=str,
+        help="metadata to include in all logs. as JSON dict",
+    )
     args = parser.parse_args()
 
     start_time = time.time()
 
-    logger = JSONLogger(run_id=int(time.time()), script="llm_extract")
+    log_context = {}
+    if args.log_context:
+        try:
+            log_context = json.loads(args.log_context)
+        except json.JSONDecodeError:
+            print("Invalid JSON for --log-context")
+            sys.exit(1)
+    log_context["script"] = "llm_extract"
+
+    logger = JSONLogger(**log_context)
 
     openai_api_key = os.environ.get("OPENAI_API_KEY")
     if not openai_api_key:
