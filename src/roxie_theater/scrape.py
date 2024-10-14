@@ -106,6 +106,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-o", "--output", type=str, help="output path")
     parser.add_argument(
+        "-p", "--prior-output-file", type=str, help="prior output json file path"
+    )
+    parser.add_argument(
         "-l",
         "--log-context",
         type=str,
@@ -126,17 +129,26 @@ def main():
 
     logger = JSONLogger(**log_context)
 
+    prior_output = None
+    if args.prior_output_file:
+        with open(args.prior_output_file, "r") as f:
+            prior_output = json.load(f)
+
     cal = scrape_calendar(logger=logger)
     logger.log(message="Scraped calendar", listing_count=len(cal))
 
     for index, k in enumerate(cal):
         v = cal[k]
         movie_logger = logger.with_kwargs(listing=v["title"], index=index)
-        movie = scrape_movie_page(url=v["link"], logger=movie_logger)
-        cal[k].update(movie)
+        if prior_output and k in prior_output:
+            movie_logger.log(message="Skipping movie in prior output")
+            cal[k].update(prior_output[k])
+        else:
+            movie = scrape_movie_page(url=v["link"], logger=movie_logger)
+            cal[k].update(movie)
 
-        # sleep w/ jitter
-        time.sleep(random.uniform(0.25, 1))
+            # sleep w/ jitter
+            time.sleep(random.uniform(0.25, 1))
 
     # save results
     output_file = f"output/data.{int(time.time())}.json"
