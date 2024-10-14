@@ -140,15 +140,17 @@ def main():
     for index, k in enumerate(cal):
         v = cal[k]
         movie_logger = logger.with_kwargs(listing=v["title"], index=index)
+
         if prior_output and k in prior_output:
             movie_logger.log(message="Skipping movie in prior output")
             cal[k].update(prior_output[k])
-        else:
-            movie = scrape_movie_page(url=v["link"], logger=movie_logger)
-            cal[k].update(movie)
+            continue
 
-            # sleep w/ jitter
-            time.sleep(random.uniform(0.25, 1))
+        movie = scrape_movie_page(url=v["link"], logger=movie_logger)
+        cal[k].update(movie)
+
+        # sleep w/ jitter
+        time.sleep(random.uniform(0.25, 1))
 
     # save results
     output_file = f"output/data.{int(time.time())}.json"

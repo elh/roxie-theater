@@ -17,6 +17,8 @@ jobs:
     - run: |
         LOG_CONTEXT=$(echo "{\"run_id\": \"${{ github.run_id }}-${{ github.run_number }}\"}")
         echo "LOG_CONTEXT=$LOG_CONTEXT" >> $GITHUB_ENV
+    # TODO: download prior output from releases
+    # TODO: if exists, send prior-output-file to the steps
     - run: python src/roxie_theater/scrape.py -o step_1.json -l "$LOG_CONTEXT"
     - run: python src/roxie_theater/llm_extract.py -f step_1.json -o step_2.json -l "$LOG_CONTEXT"
       env:

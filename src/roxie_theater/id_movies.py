@@ -80,6 +80,7 @@ def main():
     load_dotenv()
 
     parser = argparse.ArgumentParser()
+    # if movie in file already contains "llm" (and presumably "tmdb") data, skip processing
     parser.add_argument("-f", "--file", type=str, required=True)
     parser.add_argument("-o", "--output", type=str, help="output path")
     parser.add_argument(
@@ -118,8 +119,15 @@ def main():
 
     for index, k in enumerate(cal):
         v = cal[k]
-
         movie_logger = logger.with_kwargs(listing=v["title"], index=index)
+
+        # NOTE: not checking for `tmdb` in prior output. coarser, simpler approach
+        if "llm" in v:
+            movie_logger.log(
+                message="Skipping movie with llm (and presumably tmdb) data in input file"
+            )
+            continue
+
         out = identify_movies(
             tmdb_token,
             v["llm"]["extracted_movies"],

@@ -89,6 +89,7 @@ def main():
     load_dotenv()
 
     parser = argparse.ArgumentParser()
+    # if movie in file already contains "llm" data, skip processing
     parser.add_argument("-f", "--file", type=str, required=True)
     parser.add_argument("-o", "--output", type=str, help="output path")
     parser.add_argument(
@@ -124,8 +125,12 @@ def main():
 
     for index, k in enumerate(cal):
         v = cal[k]
-
         movie_logger = logger.with_kwargs(listing=v["title"], index=index)
+
+        if "llm" in v:
+            movie_logger.log(message="Skipping movie with llm data in prior output")
+            continue
+
         processed = process_movie(client, movie=v, logger=movie_logger)
         movie_logger.log(
             message="Processed movie",
