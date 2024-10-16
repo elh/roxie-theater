@@ -60,4 +60,4 @@ jobs:
         makeLatest: true
         artifactContentType: json
         name: Latest Output JSON
-        body: Created from ${{ env.DATE }} run.
+        body: Last updated from ${{ env.DATE }} run. See `out.json`.
