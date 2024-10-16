@@ -54,7 +54,7 @@ jobs:
     - uses: ncipollo/release-action@v1
       with:
         tag: latest
-        artifacts: out.json
+        artifacts: out.json,out.csv
         allowUpdates: true
         replacesArtifacts: true
         makeLatest: true
