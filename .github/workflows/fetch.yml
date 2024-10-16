@@ -44,6 +44,13 @@ jobs:
         name: "${{ env.DATE }}.csv"
         path: out.csv
         retention-days: 7
+    - env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        git config --local user.email "ci@users.noreply.github.com"
+        git config --local user.name "GitHub Action"
+        git tag latest
+        git push -f origin latest
     - uses: ncipollo/release-action@v1
       with:
         tag: latest
