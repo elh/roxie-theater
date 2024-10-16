@@ -8,6 +8,8 @@ on:
 jobs:
   fetch:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
     - uses: actions/checkout@v2
     - uses: eifinger/setup-rye@v4
@@ -17,9 +19,13 @@ jobs:
     - run: |
         LOG_CONTEXT=$(echo "{\"run_id\": \"${{ github.run_id }}-${{ github.run_number }}\"}")
         echo "LOG_CONTEXT=$LOG_CONTEXT" >> $GITHUB_ENV
-    # TODO: download prior output from releases
-    # TODO: if exists, send prior-output-file to the steps
-    - run: python src/roxie_theater/scrape.py -o step_1.json -l "$LOG_CONTEXT"
+    # NOTE: `latest` Release must already exist. Create manually if needed
+    - uses: robinraju/release-downloader@v1
+      with:
+        latest: true
+        fileName: 'out.json'
+        out-file-path: 'release-artifacts'
+    - run: python src/roxie_theater/scrape.py -o step_1.json --prior-output-file release-artifacts/out.json -l "$LOG_CONTEXT"
     - run: python src/roxie_theater/llm_extract.py -f step_1.json -o step_2.json -l "$LOG_CONTEXT"
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -38,3 +44,13 @@ jobs:
         name: "${{ env.DATE }}.csv"
         path: out.csv
         retention-days: 7
+    - uses: ncipollo/release-action@v1
+      with:
+        tag: latest
+        artifacts: out.json
+        allowUpdates: true
+        replacesArtifacts: true
+        makeLatest: true
+        artifactContentType: json
+        name: Latest Output JSON
+        body: Created from ${{ env.DATE }} run.
