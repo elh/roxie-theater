@@ -80,7 +80,7 @@ def main():
     load_dotenv()
 
     parser = argparse.ArgumentParser()
-    # if movie in file already contains "llm" (and presumably "tmdb") data, skip processing
+    # if movie in file already contains "tmdb" data, skip processing
     parser.add_argument("-f", "--file", type=str, required=True)
     parser.add_argument("-o", "--output", type=str, help="output path")
     parser.add_argument(
@@ -121,26 +121,23 @@ def main():
         v = cal[k]
         movie_logger = logger.with_kwargs(listing=v["title"], index=index)
 
-        # NOTE: not checking for `tmdb` in prior output. coarser, simpler approach
-        if "llm" in v:
-            movie_logger.log(
-                message="Skipping movie with llm (and presumably tmdb) data in input file"
-            )
+        already_identified = [m for m in v["llm"]["extracted_movies"] if "tmdb" in m]
+        not_identified = [m for m in v["llm"]["extracted_movies"] if "tmdb" not in m]
+
+        if len(not_identified) == 0:
+            movie_logger.log(message="Skipping movie with tmdb data in input file")
             continue
 
-        out = identify_movies(
-            tmdb_token,
-            v["llm"]["extracted_movies"],
-            logger=movie_logger,
-        )
+        out = identify_movies(tmdb_token, not_identified, logger=movie_logger)
         movie_logger.log(
             message="Identified movies",
+            already_identified_count=len(already_identified),
             identified_count=sum(
                 [1 if ("tmdb" in m and m["tmdb"]) else 0 for m in out]
             ),
             count=len(out),
         )
-        cal[k]["llm"]["extracted_movies"] = out
+        cal[k]["llm"]["extracted_movies"] = already_identified + out
 
         # sleep w/ jitter
         time.sleep(random.uniform(0.05, 0.2))
