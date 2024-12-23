@@ -56,16 +56,18 @@ def scrape_calendar() -> dict:
             title = film.select_one(".film-title").text.strip()
             showtime = film.select_one(".film-showtime").text.strip()
 
-            showtime_datetime = parse_showtime(year, month, day, showtime)
+            showtime_datetime_str = parse_showtime(
+                year, month, day, showtime
+            ).isoformat()
 
             if link in calendar:
-                calendar[link]["showtimes"].append(showtime_datetime)
+                calendar[link]["showtimes"].append(showtime_datetime_str)
                 continue
 
             calendar[link] = {
                 "title": title,
                 "link": link,
-                "showtimes": [showtime_datetime],
+                "showtimes": [showtime_datetime_str],
             }
 
     return calendar
@@ -143,7 +145,12 @@ def main():
 
         if prior_output and k in prior_output:
             movie_logger.log(message="Skipping movie in prior output")
+            new_showtimes = cal[k]["showtimes"]
             cal[k].update(prior_output[k])
+            for showtime in new_showtimes:
+                if showtime not in cal[k]["showtimes"]:
+                    cal[k]["showtimes"].append(showtime)
+            cal[k]["showtimes"] = sorted(cal[k]["showtimes"])
             continue
 
         movie = scrape_movie_page(url=v["link"], logger=movie_logger)
