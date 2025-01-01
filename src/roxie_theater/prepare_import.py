@@ -55,42 +55,69 @@ def main():
     if os.path.dirname(output_file):
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
     with open(output_file, "w") as csv_file:
-        fieldnames = ["tmdbID", "Title", "Year", "Directors", "Review"]
-        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-        writer.writeheader()
+        # a list of tuples (first showtime, csv row)
+        listings = []
 
         for v in cal.values():
             for m in v["llm"]["extracted_movies"]:
-                first_showtime = datetime.fromisoformat(v["showtimes"][0])
-                last_showtime = datetime.fromisoformat(v["showtimes"][-1])
-
                 # only export movies with showtimes in the future
-                if last_showtime < datetime.now(timezone("America/Los_Angeles")):
+                now = datetime.now(timezone("America/Los_Angeles"))
+                last_showtime = datetime.fromisoformat(v["showtimes"][-1])
+                if last_showtime < now:
                     continue
 
-                formatted_showtime = first_showtime.strftime("First show %B %d %I:%M%p")
+                # sorted by earliest showtime in the future
+                first_showtime = next(
+                    (
+                        datetime.fromisoformat(s)
+                        for s in v["showtimes"]
+                        if datetime.fromisoformat(s) >= now
+                    ),
+                    None,
+                )
+                if not first_showtime:
+                    continue
+
+                formatted_showtime = first_showtime.strftime("Next show %B %d %I:%M%p")
                 review = f"{v['title']}\n{v['link']}\n\n{formatted_showtime}"
 
                 if "tmdb" in m and m["tmdb"]:
-                    writer.writerow(
-                        {
-                            "tmdbID": m["tmdb"]["id"],
-                            "Title": m["tmdb"]["title"],
-                            "Year": m["tmdb"]["release_date"][:4],
-                            "Directors": m["directors"],
-                            "Review": review,
-                        }
+                    listings.append(
+                        (
+                            first_showtime,
+                            {
+                                "tmdbID": m["tmdb"]["id"],
+                                "Title": m["tmdb"]["title"],
+                                "Year": m["tmdb"]["release_date"][:4],
+                                "Directors": m["directors"],
+                                "Review": review,
+                            },
+                        )
                     )
                 else:
-                    writer.writerow(
-                        {
-                            "tmdbID": None,
-                            "Title": m["title"],
-                            "Year": m["year"],
-                            "Directors": m["directors"],
-                            "Review": review,
-                        }
+                    listings.append(
+                        (
+                            first_showtime,
+                            {
+                                "tmdbID": None,
+                                "Title": m["title"],
+                                "Year": m["year"],
+                                "Directors": m["directors"],
+                                "Review": review,
+                            },
+                        )
                     )
+
+        # sort by first showtime
+        listings.sort(key=lambda x: x[0])
+
+        # write csv
+        fieldnames = ["tmdbID", "Title", "Year", "Directors", "Review"]
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+        for _, row in listings:
+            writer.writerow(row)
+
     logger.log(
         message="Wrote output file",
         output_file=output_file,
